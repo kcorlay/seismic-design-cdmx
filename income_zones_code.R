@@ -1,0 +1,46 @@
+# libraries
+library(readxl)
+library(ggplot2)
+library(tidyverse)
+library(magrittr)
+library(RColorBrewer)
+
+# import data
+income_raw <- read_excel("Income_Zones_Table.xlsx")
+
+# copying data just in case
+income_data <- income_raw
+
+# create a dataset
+clean_income <- income_data %>%
+  arrange(ZoneType) %>% #arranging by neighborhood name
+  group_by(ZoneType, clv_ingre) %>% #grouping by neighborhood and priority
+  summarize(incomecounts = n()) #make column that counts priority per neighborhood
+
+# adding brackets
+clean_income$IncomeBracket[clean_income$clv_ingre == "1"] <- "0 to 25,000"  
+clean_income$IncomeBracket[clean_income$clv_ingre == "2"] <- "25,000 to 50,000"  
+clean_income$IncomeBracket[clean_income$clv_ingre == "3"] <- "50,000 to 100,000"  
+clean_income$IncomeBracket[clean_income$clv_ingre == "4"] <- "100,000 to 150,000"  
+clean_income$IncomeBracket[clean_income$clv_ingre == "5"] <- "150,000 to 336,319"  
+
+colnames(clean_income) <- c("Zone", "clv_ingre", "Count", "IncomeBracket")
+
+#specifying factor levels
+clean_income$IncomeBracket <- factor(clean_income$IncomeBracket, 
+                                     levels = c("0 to 25,000", "25,000 to 50,000",
+                                                "50,000 to 100,000","100,000 to 150,000",
+                                                "150,000 to 336,319"))
+as.factor(clean_income$IncomeBracket)
+
+#zone type distribution
+Income_Plot <- ggplot(data=clean_income, 
+                      aes(x= Count, y=IncomeBracket, fill= factor(Zone))) +
+  geom_bar(stat="identity")+
+  xlab("Hexagon Count") +
+  ylab("Income Bracket (MXN)") +
+  ggtitle("Mexico City Zone Types per 2018 Income Bracket") +
+  theme_light() +
+  scale_fill_brewer(palette="YlOrRd")
+
+Income_Plot
